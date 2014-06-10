@@ -1,6 +1,9 @@
-//jStarker - Javascript Cello
-//Uses the web audio API to create a playable cello with a QWERTY keyboard.
-//kegh.am
+/*jStarker - cello keyboard v0.1
+ *Uses the web audio API to create a playable cello with a QWERTY keyboard.
+ *
+ *Copyright 2014, Kegham Bedoyan
+ */
+
 (function(window) {
 	var context;
 
