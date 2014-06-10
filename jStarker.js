@@ -13,18 +13,15 @@
 	//Checks if FF: http://stackoverflow.com/questions/7000190/detect-all-firefox-versions-in-js
 	var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
-	var isTenor = false;
-
-	//Master gain node controller
-	masterGain = context.createGain()
-	masterGain.gain.value = 0.1;
-	masterGain.connect(context.destination);
-
 	var jStarker = function() {
 			var starker = {};
 			var keysPressed = {};
 			var active = {};
 
+			var isTenor = false;
+			var masterVolume = 1;
+
+			//EN keyboard mapping
 			var keyToString = {
 				//A String
 				48: 'A4',49:'A#4',50:'B4',51:'C5',52:'C#5',53:'D5',54:'D#5',55:'E5',56:'F5',57:'F#5',
@@ -36,11 +33,6 @@
 				191:'C3',90:'C#3',88:'D3',67:'D#3',86:'E3',66:'F3',78:'F#3',77:'G3',188:'G#3',190:'A3'
 			}
 
-			var celloControls = {
-				8: 'Tenor Clef'
-			}
-
-
 			//Note hierarchy
 			var keyStrings = {
 				48: [57, 56, 55, 54, 53, 52, 51, 50, 49, 48],
@@ -51,27 +43,22 @@
 
 			//Note to Frequency gist from Stuart Memo: https://gist.github.com/stuartmemo/3766449
 			var getFrequency = function(note) {
-				var notes = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'],
+				var notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
 					octave, keyNumber, mod = 0;
 				if (note.length === 3) {
 					octave = note.charAt(2);
 				} else {
 					octave = note.charAt(1);
 				}
-				keyNumber = notes.indexOf(note.slice(0, -1));
 
+				//Frequency modi
 				if(isTenor){
 					mod = 7;
 				}
 
-				if (keyNumber < 3) {
-					keyNumber = keyNumber + mod + 12 + ((octave - 1) * 12) + 1;
-				} else {
-					keyNumber = keyNumber + mod + ((octave - 1) * 12) + 1;
-				}
+				keyNumber = notes.indexOf(note.slice(0, -1)) + mod + ((octave - 1) * 12) + 4;
 				return 440 * Math.pow(2, (keyNumber - 49) / 12);
 			};
-
 
 			var getCelloNote = function(keyCode) {
 				keysPressed[keyCode] = true;
@@ -85,7 +72,21 @@
 					}
 				}
 				return false;
-			};
+			}
+
+
+			var playNote = function(osc, frequency){
+				osc.type = 'square';
+				osc.frequency.value = frequency;
+
+				var gainNode = context.createGainNode();
+				gainNode.gain.value = masterVolume;
+
+				osc.connect(gainNode);
+				gainNode.connect(context.destination);
+
+				osc.start(0);
+			}
 
 
 			var keyboardDown = function(key) {
@@ -103,35 +104,28 @@
 						var n = getCelloNote(keyCode);
 						if (n) {
 							var oscillator = context.createOscillator();
-							oscillator.type = 'square';
-							oscillator.frequency.value = getFrequency(keyToString[n]);
-							oscillator.connect(masterGain);
-							oscillator.start(0);
+							playNote(oscillator, getFrequency(keyToString[n]));
 
 							active[keyCode] = oscillator;
 						}
 					}
-				}
-
-				if(celloControls[keyCode]){
-					if(keyCode == 8){
-						isTenor = !isTenor;
-						console.log('Tenor clef: ' + isTenor);
-					}
+				}else if(keyCode == 8){
+					isTenor = !isTenor;
+					console.log('Tenor clef: ' + isTenor);
 				}
 			};
 
 
 			var keyboardUp = function(key) {
 				keyCode = key.keyCode;
+
 				if(isFirefox && keyCode == 59){
 					keyCode = 186;
 				}
 
 				if (keysPressed[191] || keysPressed[80] || keysPressed[48] || keysPressed[186]) {
 					if (active[keyCode]) {
-						active[keyCode].stop(0);
-						active[keyCode].disconnect();
+						active[keyCode].stop();
 						delete active[keyCode];
 					}
 				}
