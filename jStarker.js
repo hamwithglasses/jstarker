@@ -146,8 +146,10 @@ Copyright 2014, Kegham Bedoyan
 		};
 
 		var keyboardDown = function(key){
-			key.preventDefault();
 			var keyCode = keyboardSupport(key.keyCode);
+
+			if(keyCode!=33 && keyCode!=34 && keyCode!=38 && keyCode!=40)
+				key.preventDefault();
 
 			if(keyToNote[keyCode]){
 				keysPressed[keyCode] = true;
@@ -184,6 +186,10 @@ Copyright 2014, Kegham Bedoyan
 				console.log('Tenor clef: ' + isTenor);
 			}
 		};
+
+		var initialSound = starkerContext.createOscillator();
+		playNote(initialSound,440);
+		initialSound.stop(0);
 
 		window.onkeydown = keyboardDown;
 		window.onkeyup = keyboardUp;
